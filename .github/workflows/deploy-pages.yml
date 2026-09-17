@@ -1,11 +1,13 @@
 name: 部署加班看板到 GitHub Pages
 
 # 触发方式：
-#   1) otData/ 数据变化（私有仓库 punch-tracker 的定时任务把归档结果推过来）→ 自动重新部署
+#   1) otData/ 数据变化（数据由外部私有仓库的定时任务推送过来）→ 自动重新部署
 #   2) 站点代码变化（index.html / assets/ / 本文件）→ 自动重新部署
 #   3) 手动触发（Actions → Run workflow）
-#   4) 可选：私有仓库用 repository_dispatch（type=otdata-updated）强制重新部署
-#      见仓库根目录 PRIVATE-SETUP.md（该文档不提交，仅本地保留）
+#   4) 外部仓库调用 repository_dispatch（event_type=otdata-updated）强制重新部署
+#
+# 注意：用 GITHUB_TOKEN 推送的提交不会触发本 workflow（GitHub 的防递归限制），
+# 外部仓库必须用 PAT / Deploy Key 推送，或在推送后额外发一次 repository_dispatch。
 on:
   push:
     branches: [main]
