@@ -1,0 +1,100 @@
+name: 部署加班看板到 GitHub Pages
+
+# 触发方式：
+#   1) otData/ 数据变化（私有仓库 punch-tracker 的定时任务把归档结果推过来）→ 自动重新部署
+#   2) 站点代码变化（index.html / assets/ / 本文件）→ 自动重新部署
+#   3) 手动触发（Actions → Run workflow）
+#   4) 可选：私有仓库用 repository_dispatch（type=otdata-updated）强制重新部署
+#      见仓库根目录 PRIVATE-SETUP.md（该文档不提交，仅本地保留）
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'otData/**'
+      - 'index.html'
+      - 'assets/**'
+      - 'ot-ledger.config.json'
+      - '.github/workflows/deploy-pages.yml'
+  repository_dispatch:
+    types: [otdata-updated]
+  workflow_dispatch:
+
+# 只允许同一时间有一个 Pages 部署，排队执行不取消（避免数据更新被中断）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: 校验并打包站点
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 校验脚本语法
+        run: |
+          set -euo pipefail
+          node --check assets/js/model.js
+          node --check assets/js/csv.js
+          node --check assets/js/store.js
+          node --check assets/js/chart.js
+          node --check assets/js/app.js
+
+      - name: 校验 otData/all.csv 可解析
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+          import { readFileSync } from 'node:fs';
+          const { parseRecords, lastSyncedAt } = await import('./assets/js/model.js');
+          const records = parseRecords(readFileSync('otData/all.csv', 'utf8'));
+          if (!records.length) throw new Error('otData/all.csv 中没有可用记录');
+          const months = [...new Set(records.map((r) => r.date.slice(0, 7)))].sort();
+          console.log('记录数：' + records.length);
+          console.log('覆盖月份：' + months.join(', '));
+          console.log('最近同步：' + lastSyncedAt(records));
+          "
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 组装发布目录
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp index.html _site/
+          cp -r assets _site/
+          cp -r otData _site/
+          # 仓库级可选配置（不存在时跳过）
+          if [ -f ot-ledger.config.json ]; then cp ot-ledger.config.json _site/; fi
+          # 交给 Pages 直接静态托管，跳过 Jekyll 处理
+          touch _site/.nojekyll
+          echo '--- 发布内容 ---'
+          find _site -type f | sort
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: 发布到 GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4
