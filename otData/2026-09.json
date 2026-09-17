@@ -1,0 +1,261 @@
+{
+  "month": "2026-09",
+  "timezone": "Asia/Shanghai",
+  "updated_at": "2026-09-17T18:33:31+08:00",
+  "count": 25,
+  "records": [
+    {
+      "ATTDATE": "2026-09-07 08:11:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-07 12:30:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-07 19:31:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-08 08:10:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-08 12:30:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-08 20:06:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-09 08:09:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-09 12:35:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-09 19:01:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-10 08:13:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-10 12:30:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-10 19:01:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-11 08:13:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-11 12:31:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-11 17:36:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-14 08:12:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-14 12:36:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-14 19:08:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-15 07:58:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-15 12:30:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-15 20:05:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-16 08:05:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 1,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-16 12:31:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 2,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-16 19:03:00",
+      "ATTADDRESS": "",
+      "LOCATIONTYPE": "手动补录",
+      "STATUSCOLOR": null,
+      "SOURCE": "manual",
+      "SEQ": 3,
+      "_first_seen": "2026-09-17T18:33:31+08:00",
+      "_last_seen": "2026-09-17T18:33:31+08:00"
+    },
+    {
+      "ATTDATE": "2026-09-17 07:59:01",
+      "ATTADDRESS": "深圳坪山1号门",
+      "LOCATIONTYPE": "工业园打卡",
+      "STATUSCOLOR": [
+        255,
+        153,
+        0
+      ],
+      "ID": 1,
+      "_first_seen": "2026-09-17T09:50:01+08:00",
+      "_last_seen": "2026-09-17T09:50:01+08:00"
+    }
+  ]
+}
