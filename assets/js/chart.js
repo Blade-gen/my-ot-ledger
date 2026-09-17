@@ -240,6 +240,11 @@ function draw(host, opts, width) {
     }
 
     // 命中区域（整列）
+    //
+    // 这一列是 8×156 的透明高窄矩形，手机上点按后浏览器会给它画一圈焦点外框
+    // （安卓多为系统主题色，如 MIUI 橙色），视觉上就像柱子被套了个边框。
+    // 处理放在 app.css 的 .chart 规则里：只去掉「点按」产生的轮廓，
+    // 桌面键盘 Tab 聚焦的提示仍然保留，因此这里继续用 tabindex="0"。
     const hit = node('rect', {
       x: pad.left + step * i,
       y: pad.top,

@@ -257,6 +257,24 @@ button {
 
 .chart {
   position: relative;
+  /* 图表每一列都是可点/可聚焦的命中区（chart.js 里的透明 rect）。
+     手机上点按柱子后，这一列会获得焦点，浏览器/WebView 会沿整列外沿画一圈
+     系统主题色高亮（MIUI 为橙色），看起来就像柱子被套了个边框。
+     这里只去掉「点按」产生的轮廓，键盘 Tab 聚焦的提示在下面的媒体查询里保留。 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chart svg [tabindex]:focus {
+  outline: none;
+}
+
+/* 仅在有精确指针（鼠标 / 触控板）的设备上保留键盘聚焦提示，
+   触屏设备不会因为点按而画出边框 */
+@media (hover: hover) and (pointer: fine) {
+  .chart svg [tabindex]:focus-visible {
+    outline: 1.5px solid rgba(20, 20, 24, 0.3);
+    outline-offset: -1.5px;
+  }
 }
 
 .chart svg {
