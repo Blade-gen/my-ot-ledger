@@ -5,136 +5,141 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
     <meta name="description" content="按标准下班时间统计每月平均加班时长的个人看板" />
-    <title>加班时长看板</title>
+    <title>加班时长</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="assets/app.css" />
+    <!--
+      加载遮罩的样式**唯一定义处**（Vue 版遮罩也用这几个 class，见 LoadingOverlay.vue）。
+
+      为什么不放在 app.css：
+        1. 开发模式下 app.css 是由 JS 注入的，等它到达时兜底遮罩已经绘制过了 ——
+           表现为「无样式文字 → 突然跳变成卡片」的突变。
+        2. 更隐蔽的是 box-sizing：app.css 里有全局的 `* { box-sizing: border-box }`，
+           在它生效之前，内联样式按默认的 content-box 计算，
+           于是卡片被撑成 216px、spinner 变成 30px；CSS 到达后才缩回 168px / 26px。
+           两处样式重复定义必然漂移，所以这里只留一份。
+
+      ⚠️ 颜色写**字面量**而不是 var(--bg) 之类：那些 CSS 变量定义在 app.css 的 :root 里，
+         在本样式块生效的时点还不存在。改色时请同步 app.css 的变量取值。
+      ⚠️ 不要把这些规则再抄回 app.css（会重新引入漂移）。
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #f2f3f5;
+      }
+
+      /* 兜底遮罩层级要高于 Vue 遮罩（40），交接时才不会闪 */
+      #boot-loading {
+        z-index: 50;
+      }
+
+      .loading {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: #f2f3f5;
+        /* 显式声明：不依赖 app.css 的全局 `* { box-sizing }` */
+        box-sizing: border-box;
+      }
+
+      .loading *,
+      .loading *::before,
+      .loading *::after {
+        box-sizing: border-box;
+      }
+
+      /* display:flex 会盖掉 UA 的 [hidden]{display:none}，显式声明一次，
+         以便用 `loading.hidden = true` 也能隐藏（Vue 侧用的是 v-if） */
+      .loading[hidden] {
+        display: none;
+      }
+
+      /* 遮罩需要第一帧就完全不透明，因此刻意不加淡入动画 */
+      .loading-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        min-width: 168px;
+        padding: 22px 24px;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(16, 16, 24, 0.04), 0 8px 20px rgba(16, 16, 24, 0.035);
+      }
+
+      .loading-text {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.45;
+        color: #6e6e76;
+        text-align: center;
+      }
+
+      .spinner {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2.5px solid #e9e9ec;
+        border-top-color: #f4575a;
+        animation: spin 0.7s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* 多月份加载时的细进度条 */
+      .loading-bar {
+        width: 140px;
+        height: 3px;
+        border-radius: 2px;
+        background: #e9e9ec;
+        overflow: hidden;
+      }
+
+      .loading-bar-fill {
+        display: block;
+        width: 0;
+        height: 100%;
+        border-radius: 2px;
+        background: #f4575a;
+        transition: width 0.2s ease;
+      }
+
+      /* 减弱动效偏好：保留提示，但转慢一些 */
+      @media (prefers-reduced-motion: reduce) {
+        .spinner {
+          animation-duration: 2s;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div class="page">
-      <header class="topbar">
-        <div class="topbar-side"></div>
-        <div class="topbar-main">
-          <div class="title-row">
-            <h1 class="app-title">加班时长</h1>
-            <button
-              type="button"
-              class="icon-btn icon-btn--title"
-              id="btnRules"
-              aria-label="统计规则"
-              aria-haspopup="dialog"
-            >
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path
-                  d="M10 3.2a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6zm0 1.6a5.2 5.2 0 1 0 0 10.4 5.2 5.2 0 0 0 0-10.4zm0 1.8a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7zm.7 2.9v4.1h-1.4V9.5z"
-                  fill="currentColor"
-                />
-              </svg>
-            </button>
-          </div>
-          <button type="button" class="month-picker" id="monthPicker" aria-haspopup="dialog">
-            <span id="monthLabel">加载中…</span>
-            <svg class="caret" viewBox="0 0 12 12" aria-hidden="true">
-              <path
-                d="M2.2 4.4 6 8.2l3.8-3.8"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.4"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-        <div class="topbar-side right">
-          <button type="button" class="icon-btn" id="btnSettings" aria-label="设置" aria-haspopup="dialog">
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path
-                d="M10 6.2a1.4 1.4 0 1 1 0-2.8 1.4 1.4 0 0 1 0 2.8zm0 5.2a1.4 1.4 0 1 1 0-2.8 1.4 1.4 0 0 1 0 2.8zm0 5.2a1.4 1.4 0 1 1 0-2.8 1.4 1.4 0 0 1 0 2.8z"
-                fill="currentColor"
-              />
-            </svg>
-          </button>
-        </div>
-      </header>
+    <div id="app"></div>
 
-      <div class="layout">
-        <div class="col col-left">
-          <div class="segmented" id="segmented" role="tablist" aria-label="统计范围">
-            <button type="button" class="seg is-active" data-view="month" role="tab" aria-selected="true">
-              月
-            </button>
-            <button type="button" class="seg" data-view="all" role="tab" aria-selected="false">全部</button>
-          </div>
+    <!--
+      首屏兜底 loading。
 
-          <section class="card panel-card">
-            <div class="hero">
-              <div class="hero-value">
-                <span id="heroValue">0</span>
-                <span class="hero-unit" id="heroUnit">小时/天</span>
-              </div>
-              <p class="hero-caption" id="heroCaption"></p>
-            </div>
+      为什么必须有：脚本是 module（延迟执行），CSS 在开发模式下也是由 JS 注入的。
+      若只靠 Vue 渲染遮罩，在 HTML/JS/CSS 到达之前页面是空白的 —— 即高度坍缩。
 
-            <div class="chart-block">
-              <p class="chart-title" id="chartTitle"></p>
-              <div class="chart" id="chart"></div>
-              <div class="legend">
-                <span class="lg"><i class="sw sw--bar"></i>加班时长</span>
-                <span class="lg"><i class="sw sw--avg"></i>平均值</span>
-                <span class="lg"><i class="sw sw--dot"></i>忘打卡</span>
-                <span class="lg"><i class="sw sw--ex"></i>无数据</span>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div class="col col-right">
-          <section class="card">
-            <div class="card-head">
-              <span class="card-icon">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M4 13.6h2.6V16H4zm4.7-4.2h2.6V16H8.7zm4.7-5.4H16V16h-2.6z" fill="currentColor" />
-                </svg>
-              </span>
-              <h2 id="overviewTitle">本月概览</h2>
-            </div>
-            <div class="stat-grid" id="statGrid"></div>
-            <p class="card-note" id="cardNote"></p>
-          </section>
-
-          <section class="card">
-            <div class="card-head">
-              <span class="card-icon">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M6.4 3.2h1.6v1.6h4V3.2h1.6v1.6h1.6v11.2H4.8V4.8h1.6zm7.2 4.8H6.4v6.4h7.2z" fill="currentColor" />
-                </svg>
-              </span>
-              <h2 id="detailTitle">每日明细</h2>
-              <span class="card-head-extra" id="detailCount"></span>
-            </div>
-            <div class="table-wrap">
-              <table class="detail-table">
-                <thead>
-                  <tr id="detailHead"></tr>
-                </thead>
-                <tbody id="detailBody"></tbody>
-              </table>
-            </div>
-            <div class="excluded-block" id="excludedBlock" hidden>
-              <h3>已排除的日期</h3>
-              <div class="chips" id="excludedChips"></div>
-            </div>
-          </section>
-
-          <p class="footnote" id="footnote"></p>
-        </div>
+      这里用与 LoadingOverlay.vue **完全相同的 class**，样式来自上面的 <style>，
+      因此从第一帧起就与 Vue 版遮罩逐像素一致，交接时看不出任何变化。
+    -->
+    <div id="boot-loading" class="loading" role="status" aria-live="polite">
+      <div class="loading-box">
+        <span class="spinner" aria-hidden="true"></span>
+        <p class="loading-text">正在加载数据…</p>
       </div>
     </div>
 
-    <div class="sheet-backdrop" id="backdrop" hidden></div>
-    <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></div>
-    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-
-    <script type="module" src="assets/js/app.js"></script>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

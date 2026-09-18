@@ -1,0 +1,7 @@
+{
+  "workdayEnd": "17:30",
+  "minPunches": 2,
+  "forgotCounts": true,
+  "pendingCounts": false,
+  "exclusions": {}
+}

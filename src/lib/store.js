@@ -18,6 +18,8 @@ export const DEFAULT_CONFIG = {
   minPunches: 2,
   /** 忘打卡日是否计入平均（加班按 0 计） */
   forgotCounts: true,
+  /** 当天还没抓到下班卡时，是否把当天按 0 加班计入平均（默认关） */
+  pendingCounts: false,
   /** { 'YYYY-MM-DD': { excluded: true, note: '' } } */
   exclusions: {},
 };
@@ -50,6 +52,8 @@ function sanitize(raw) {
     workdayEnd: /^\d{1,2}:\d{2}$/.test(cfg.workdayEnd || '') ? cfg.workdayEnd : DEFAULT_CONFIG.workdayEnd,
     minPunches: Math.min(6, Math.max(1, Number(cfg.minPunches) || DEFAULT_CONFIG.minPunches)),
     forgotCounts: cfg.forgotCounts !== false,
+    // 默认关：只有显式 true 才算开。别写成 !== false，那会让缺省值变成「开」
+    pendingCounts: cfg.pendingCounts === true,
     exclusions: sanitizeExclusions(cfg.exclusions),
   };
 }
@@ -97,6 +101,7 @@ export const store = {
       workdayEnd: local.workdayEnd,
       minPunches: local.minPunches,
       forgotCounts: local.forgotCounts,
+      pendingCounts: local.pendingCounts,
       exclusions: { ...this.remote.exclusions, ...local.exclusions },
     };
   },
@@ -135,6 +140,7 @@ export const store = {
         workdayEnd: cfg.workdayEnd,
         minPunches: cfg.minPunches,
         forgotCounts: cfg.forgotCounts,
+        pendingCounts: cfg.pendingCounts,
         exclusions: Object.fromEntries(
           Object.entries(cfg.exclusions).map(([date, v]) => [date, { excluded: true, note: v.note || '' }]),
         ),

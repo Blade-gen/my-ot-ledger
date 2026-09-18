@@ -1,0 +1,26 @@
+{
+  "name": "my-ot-ledger",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "按标准下班时间统计每月平均加班时长的个人看板（Vue 3.6 + Vapor Mode）",
+  "packageManager": "pnpm@11.11.0",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "test": "node scripts/selftest.mjs",
+    "build:index": "node scripts/build-index.mjs"
+  },
+  "dependencies": {
+    "vue": "3.6.0-rc.9"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
+    "remixicon": "4.9.1",
+    "vite": "^7.3.6"
+  }
+}

@@ -2,19 +2,29 @@ name: 部署加班看板到 GitHub Pages
 
 # 触发方式：
 #   1) otData/ 数据变化（数据由外部私有仓库的定时任务推送过来）→ 自动重新部署
-#   2) 站点代码变化（index.html / assets/ / 本文件）→ 自动重新部署
+#   2) 站点代码变化（src/ / index.html / vite.config.mjs / package.json / 本文件）→ 自动重新部署
 #   3) 手动触发（Actions → Run workflow）
 #   4) 外部仓库调用 repository_dispatch（event_type=otdata-updated）强制重新部署
 #
 # 注意：用 GITHUB_TOKEN 推送的提交不会触发本 workflow（GitHub 的防递归限制），
 # 外部仓库必须用 PAT / Deploy Key 推送，或在推送后额外发一次 repository_dispatch。
+#
+# 站点技术栈：Vue 3.6 (Vapor Mode) + Vite。
+# 构建产物（dist/）不提交到仓库，由 CI 现场构建：
+#   - otData/ 是数据不是源码，由 vite.config.mjs 的 copyOtData 插件拷进 dist/
+#   - 因此 `pnpm build` 单独就能产出可部署的完整目录
 on:
   push:
     branches: [main]
     paths:
       - 'otData/**'
       - 'index.html'
-      - 'assets/**'
+      - 'src/**'
+      - 'scripts/**'
+      - 'vite.config.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - 'ot-ledger.config.json'
       - '.github/workflows/deploy-pages.yml'
   repository_dispatch:
@@ -44,50 +54,58 @@ jobs:
         with:
           node-version: '22'
 
-      - name: 校验脚本语法
-        run: |
-          set -euo pipefail
-          node --check assets/js/model.js
-          node --check assets/js/csv.js
-          node --check assets/js/store.js
-          node --check assets/js/chart.js
-          node --check assets/js/app.js
+      - name: 安装 pnpm
+        # 用 pnpm 而非 npm：vue 3.6.0-rc.9 是预发布版，
+        # npm 会因 plugin-vue 的 peer 范围 ^3.2.25 判定冲突而 ERESOLVE 失败。
+        # 不写 version：由 package.json 的 packageManager 字段决定版本，
+        # 避免「本地 11 / CI 10」这种版本漂移。
+        uses: pnpm/action-setup@v4
 
-      - name: 校验 otData/all.csv 可解析
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 数据自检（纯计算逻辑）
+        run: pnpm test
+
+      - name: 生成 otData/index.json
         run: |
           set -euo pipefail
-          node --input-type=module -e "
-          import { readFileSync } from 'node:fs';
-          const { parseRecords, lastSyncedAt } = await import('./assets/js/model.js');
-          const records = parseRecords(readFileSync('otData/all.csv', 'utf8'));
-          if (!records.length) throw new Error('otData/all.csv 中没有可用记录');
-          const months = [...new Set(records.map((r) => r.date.slice(0, 7)))].sort();
-          console.log('记录数：' + records.length);
-          console.log('覆盖月份：' + months.join(', '));
-          console.log('最近同步：' + lastSyncedAt(records));
-          "
+          # 月份清单由各月 JSON 现算，保证即使外部仓库只推了 YYYY-MM.json
+          # 站点也能拿到正确的月份列表
+          node scripts/build-index.mjs
+
+      - name: 构建站点（Vue 3.6 Vapor）
+        run: pnpm build
+
+      - name: 校验产物
+        run: |
+          set -euo pipefail
+          test -f dist/index.html || { echo "缺少 dist/index.html"; exit 1; }
+          test -d dist/otData || { echo "缺少 dist/otData"; exit 1; }
+
+          # 产物必须真的是 Vapor：不应出现虚拟 DOM 的 createVNode
+          js=$(ls dist/assets/*.js | head -n1)
+          if grep -q 'createVNode' "$js"; then
+            echo "::error::产物包含 createVNode，Vapor 编译未生效"
+            exit 1
+          fi
+          echo "✓ $js 是 Vapor 产物（无 createVNode）"
+
+          # 相对路径才能部署在 /<repo>/ 子路径下
+          grep -q 'src="./assets/' dist/index.html || {
+            echo "::error::index.html 未使用相对资源路径，子路径部署会 404"
+            exit 1
+          }
+          echo '--- 发布内容 ---'
+          find dist -type f | sort
 
       - name: 配置 Pages
         uses: actions/configure-pages@v6
 
-      - name: 组装发布目录
-        run: |
-          set -euo pipefail
-          mkdir -p _site
-          cp index.html _site/
-          cp -r assets _site/
-          cp -r otData _site/
-          # 仓库级可选配置（不存在时跳过）
-          if [ -f ot-ledger.config.json ]; then cp ot-ledger.config.json _site/; fi
-          # 交给 Pages 直接静态托管，跳过 Jekyll 处理
-          touch _site/.nojekyll
-          echo '--- 发布内容 ---'
-          find _site -type f | sort
-
       - name: 上传 Pages 产物
         uses: actions/upload-pages-artifact@v5
         with:
-          path: _site
+          path: dist
 
   deploy:
     name: 发布到 GitHub Pages

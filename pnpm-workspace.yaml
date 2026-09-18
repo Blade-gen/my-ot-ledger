@@ -1,0 +1,27 @@
+# pnpm 配置
+#
+# 为什么需要这个文件：
+#   esbuild 需要执行安装脚本来放置平台二进制；pnpm 默认拦截构建脚本，
+#   拦截时会以 ERR_PNPM_IGNORED_BUILDS 退出（exit 1），从而让 CI 失败。
+#   这里显式允许 esbuild 的构建脚本。
+#
+# 为什么用 pnpm 而不是 npm：
+#   vue 3.6.0-rc.9 是预发布版，而 @vitejs/plugin-vue 的 peer 范围是 ^3.2.25，
+#   npm 会判定冲突并 ERESOLVE 失败；pnpm 能正常解析预发布版。
+allowBuilds:
+  esbuild: true
+
+# 允许安装这些预发布版本（pnpm 的供应链延迟策略会拦截新发布的包）
+minimumReleaseAgeExclude:
+  - vue@3.6.0-rc.9
+  - '@vue/compiler-core@3.6.0-rc.9'
+  - '@vue/compiler-dom@3.6.0-rc.9'
+  - '@vue/compiler-sfc@3.6.0-rc.9'
+  - '@vue/compiler-ssr@3.6.0-rc.9'
+  - '@vue/compiler-vapor@3.6.0-rc.9'
+  - '@vue/reactivity@3.6.0-rc.9'
+  - '@vue/runtime-core@3.6.0-rc.9'
+  - '@vue/runtime-dom@3.6.0-rc.9'
+  - '@vue/runtime-vapor@3.6.0-rc.9'
+  - '@vue/server-renderer@3.6.0-rc.9'
+  - '@vue/shared@3.6.0-rc.9'

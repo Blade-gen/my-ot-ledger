@@ -125,46 +125,124 @@ export function dateLabel(date) {
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/;
 
+/** 记录按「日期 + 分钟」升序，保证同一天内按时间先后排列 */
+function sortRecords(records) {
+  records.sort((a, b) => (a.date === b.date ? a.minute - b.minute : a.date < b.date ? -1 : 1));
+  return records;
+}
+
+/** 一条原始行 -> 打卡记录；ATTDATE 不含合法时间时返回 null */
+function toRecord(get) {
+  const att = String(get('ATTDATE') ?? '').trim();
+  const m = DATE_RE.exec(att);
+  if (!m) return null;
+
+  const str = (name) => {
+    const v = get(name);
+    return v === null || v === undefined ? '' : String(v).trim();
+  };
+  const hh = Number(m[4]);
+  const mm = Number(m[5]);
+
+  return {
+    date: `${m[1]}-${m[2]}-${m[3]}`,
+    time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
+    minute: hh * 60 + mm,
+    location: str('LOCATIONTYPE'),
+    address: str('ATTADDRESS'),
+    source: str('SOURCE'),
+    firstSeen: str('_FIRST_SEEN'),
+    lastSeen: str('_LAST_SEEN'),
+  };
+}
+
 /**
  * 解析 otData/all.csv 文本 -> 打卡记录数组（按时间升序）
+ *
+ * 这是兼容路径：数据源改为按月 JSON 后仍保留，用于 index.json 缺失时兜底。
  */
 export function parseRecords(csvText) {
   const rows = parseCSV(csvText);
   if (!rows.length) return [];
 
   const header = rows[0].map((h) => h.trim().toUpperCase());
+  const iDate = header.indexOf('ATTDATE');
+  if (iDate < 0) throw new Error('all.csv 缺少 ATTDATE 列');
+
   const col = (name) => header.indexOf(name);
-  const iDate = col('ATTDATE');
   const iLoc = col('LOCATIONTYPE');
   const iAddr = col('ATTADDRESS');
   const iSrc = col('SOURCE');
   const iFirst = col('_FIRST_SEEN');
   const iLast = col('_LAST_SEEN');
 
-  if (iDate < 0) throw new Error('all.csv 缺少 ATTDATE 列');
-
   const records = [];
   for (let r = 1; r < rows.length; r += 1) {
     const row = rows[r];
-    const att = (row[iDate] || '').trim();
-    const m = DATE_RE.exec(att);
-    if (!m) continue;
-    const hh = Number(m[4]);
-    const mm = Number(m[5]);
-    records.push({
-      date: `${m[1]}-${m[2]}-${m[3]}`,
-      time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
-      minute: hh * 60 + mm,
-      location: iLoc >= 0 ? (row[iLoc] || '').trim() : '',
-      address: iAddr >= 0 ? (row[iAddr] || '').trim() : '',
-      source: iSrc >= 0 ? (row[iSrc] || '').trim() : '',
-      firstSeen: iFirst >= 0 ? (row[iFirst] || '').trim() : '',
-      lastSeen: iLast >= 0 ? (row[iLast] || '').trim() : '',
+    const record = toRecord((name) => {
+      switch (name) {
+        case 'ATTDATE':
+          return row[iDate];
+        case 'LOCATIONTYPE':
+          return iLoc >= 0 ? row[iLoc] : '';
+        case 'ATTADDRESS':
+          return iAddr >= 0 ? row[iAddr] : '';
+        case 'SOURCE':
+          return iSrc >= 0 ? row[iSrc] : '';
+        case '_FIRST_SEEN':
+          return iFirst >= 0 ? row[iFirst] : '';
+        case '_LAST_SEEN':
+          return iLast >= 0 ? row[iLast] : '';
+        default:
+          return '';
+      }
     });
+    if (record) records.push(record);
   }
 
-  records.sort((a, b) => (a.date === b.date ? a.minute - b.minute : a.date < b.date ? -1 : 1));
-  return records;
+  return sortRecords(records);
+}
+
+/** 键名统一成大写，兼容 JSON 里的 ATTDATE 与 _first_seen 两种写法 */
+function upperKeys(row) {
+  const out = {};
+  for (const [key, value] of Object.entries(row)) out[String(key).trim().toUpperCase()] = value;
+  return out;
+}
+
+/**
+ * 解析按月归档的 JSON -> 打卡记录数组
+ *
+ * 接受三种形态，容错优先（坏文件返回空数组，而不是让整站挂掉）：
+ *   1. otData/YYYY-MM.json 的完整对象：{ month, records: [...] }
+ *   2. 裸数组：[{ ATTDATE, ... }]
+ *   3. 上面两种的 JSON 文本
+ */
+export function recordsFromJSON(input) {
+  let data = input;
+  if (typeof data === 'string') {
+    try {
+      data = JSON.parse(data);
+    } catch {
+      return [];
+    }
+  }
+  if (data && !Array.isArray(data) && Array.isArray(data.records)) data = data.records;
+  if (!Array.isArray(data)) return [];
+
+  const records = [];
+  for (const row of data) {
+    if (!row || typeof row !== 'object') continue;
+    const u = upperKeys(row);
+    const record = toRecord((name) => u[name]);
+    if (record) records.push(record);
+  }
+  return sortRecords(records);
+}
+
+/** 只保留某个（YYYY-MM）月份的记录 */
+export function filterByMonth(records, month) {
+  return records.filter((r) => r.date.slice(0, 7) === month);
 }
 
 /** 数据自身的最后同步时间（取 _last_seen 最大值） */
@@ -225,7 +303,8 @@ export const STATUS_TEXT = {
  *  2. 最后一条打卡晚于标准下班时间 -> 加班 = 最后打卡 - 标准下班时间。
  *  3. 最后一条打卡早于标准下班时间 -> 视为忘打卡，加班时长记 0。
  *  4. 打卡次数少于 minPunches（默认 2）-> 数据不足，不计入统计。
- *  5. 当天且尚未打出晚于下班时间的卡 -> 今日待更新，不计入统计（避免用半天数据拉低均值）。
+ *  5. 今天（一条卡都没有，或还没打出晚于下班时间的卡）-> 今日待更新。
+ *     默认（pendingCounts 未显式打开）不计入平均；打开后按 0 加班计入。
  *  6. 被标记为「不纳入统计」的日期不参与任何汇总。
  */
 export function computeDays(records, settings, ctx = {}) {
@@ -234,7 +313,26 @@ export function computeDays(records, settings, ctx = {}) {
   const minPunches = Math.max(1, Number(settings.minPunches) || 2);
   const exclusions = settings.exclusions || {};
 
-  return groupByDate(records).map(({ date, punches }) => {
+  const groups = groupByDate(records);
+
+  // 「今天一条卡都没有」时也要补一天 —— 但只在 pendingCounts 打开时补。
+  // groupByDate 只会产出「数据里出现过的日期」，于是「还没打卡的今天」根本不在 days 里，
+  // 「今日待更新」无从谈起：pendingCounts 只对「打了上班卡、还没打下班卡」的今天生效，
+  // 对「今天一条卡都没有」完全失效（实测 9/18 无记录，开关怎么切日均都是 1.79；
+  // 打开后应为 968/10 = 1.61）。
+  // 关闭时不补：那天不参与任何统计，凭空多一行没有打卡记录的日期只会让
+  // 「有打卡 N 天」虚高，还给用户一个没有意义的「排除」按钮。
+  // 仅在已加载数据确实覆盖了今天所在月份时补，避免在看 7 月时凭空多出一个 9/18。
+  if (
+    settings.pendingCounts === true &&
+    !groups.some((g) => g.date === today) &&
+    records.some((r) => r.date.slice(0, 7) === today.slice(0, 7))
+  ) {
+    groups.push({ date: today, punches: [] });
+    groups.sort((a, b) => (a.date < b.date ? -1 : 1));
+  }
+
+  return groups.map(({ date, punches }) => {
     const marker = exclusions[date];
     const excluded = Boolean(marker && marker.excluded !== false);
     const first = punches[0];
@@ -243,8 +341,11 @@ export function computeDays(records, settings, ctx = {}) {
     let status;
     let otMinutes = 0;
 
-    if (date === today && last.minute <= endMinutes) {
-      // 当天还没打出晚于下班时间的卡，数据未完整，先不计入
+    if (!punches.length) {
+      // 只有上面补出来的「今天」会是空打卡
+      status = 'pending';
+    } else if (date === today && last.minute <= endMinutes) {
+      // 当天还没打出晚于下班时间的卡，数据未完整
       status = 'pending';
     } else if (punches.length < minPunches) {
       status = 'incomplete';
@@ -255,9 +356,14 @@ export function computeDays(records, settings, ctx = {}) {
       otMinutes = last.minute - endMinutes;
     }
 
+    // 「今日待更新」默认**不**计入（此时 otMinutes 本来就是 0）。
+    // 打开后会把「今天还没下班」也算作一个统计日 —— 目的是避免月初只统计
+    // 已完整的日子、让日均看起来偏高。关掉即回到「不计入」。
     const counted =
       !excluded &&
-      (status === 'ok' || (status === 'forgot' && settings.forgotCounts !== false));
+      (status === 'ok' ||
+        (status === 'forgot' && settings.forgotCounts !== false) ||
+        (status === 'pending' && settings.pendingCounts === true));
 
     return {
       date,
@@ -267,8 +373,10 @@ export function computeDays(records, settings, ctx = {}) {
       punches,
       first,
       last,
-      inTime: timeOf(first),
-      outTime: timeOf(last),
+      // 补出来的「今天」没有打卡记录，first/last 都是 undefined —— 这里必须兜住，
+      // 否则 timeOf(undefined) 会直接把整站算崩。
+      inTime: punches.length ? timeOf(first) : '',
+      outTime: punches.length ? timeOf(last) : '',
       lunchTime: punches.length >= 3 ? timeOf(punches[punches.length - 2]) : '',
       rawStatus: status,
       status: excluded ? 'excluded' : status,
@@ -284,17 +392,21 @@ export function summarize(days) {
   const counted = days.filter((d) => d.counted);
   const totalMinutes = counted.reduce((s, d) => s + d.otMinutes, 0);
   const maxDay = counted.reduce((acc, d) => (acc === null || d.otMinutes > acc.otMinutes ? d : acc), null);
-  const latest = counted.reduce(
-    (acc, d) => (acc === null || d.last.minute > acc.last.minute ? d : acc),
-    null,
-  );
+  // 只考虑真有打卡记录的日子：打开 pendingCounts 后，「今天一条卡都没有」也会被计入，
+  // 那种 day 的 last 是 undefined，直接读 .minute 会崩。
+  const latest = counted
+    .filter((d) => d.last)
+    .reduce((acc, d) => (acc === null || d.last.minute > acc.last.minute ? d : acc), null);
   return {
     totalMinutes,
     days: counted.length,
     avgMinutes: counted.length ? totalMinutes / counted.length : 0,
     maxDay,
     latest,
-    recordedDays: days.length,
+    // 按「确实有打卡记录的天数」算，而不是 days.length：
+    // pendingCounts 打开时会补出一个一条卡都没有的「今天」，
+    // 用它去撑「共 N 天有打卡」的文案就不对了。
+    recordedDays: days.filter((d) => d.punches.length > 0).length,
     forgotDays: days.filter((d) => d.rawStatus === 'forgot').length,
     incompleteDays: days.filter((d) => d.rawStatus === 'incomplete').length,
     pendingDays: days.filter((d) => d.rawStatus === 'pending').length,
