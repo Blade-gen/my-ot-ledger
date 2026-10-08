@@ -1,0 +1,47 @@
+{
+  "month": "2026-10",
+  "timezone": "Asia/Shanghai",
+  "updated_at": "2026-10-08T23:01:03+08:00",
+  "count": 3,
+  "records": [
+    {
+      "ATTDATE": "2026-10-08 07:57:44",
+      "ATTADDRESS": "深圳坪山六角大楼A区停车场",
+      "LOCATIONTYPE": "工业园打卡",
+      "STATUSCOLOR": [
+        255,
+        153,
+        0
+      ],
+      "ID": 1,
+      "_first_seen": "2026-10-08T23:01:01+08:00",
+      "_last_seen": "2026-10-08T23:01:01+08:00"
+    },
+    {
+      "ATTDATE": "2026-10-08 12:30:16",
+      "ATTADDRESS": "深圳坪山中央大道北路",
+      "LOCATIONTYPE": "工业园打卡",
+      "STATUSCOLOR": [
+        255,
+        153,
+        0
+      ],
+      "ID": 1,
+      "_first_seen": "2026-10-08T23:01:01+08:00",
+      "_last_seen": "2026-10-08T23:01:01+08:00"
+    },
+    {
+      "ATTDATE": "2026-10-08 19:37:02",
+      "ATTADDRESS": "深圳坪山1号门",
+      "LOCATIONTYPE": "工业园打卡",
+      "STATUSCOLOR": [
+        255,
+        153,
+        0
+      ],
+      "ID": 1,
+      "_first_seen": "2026-10-08T23:01:01+08:00",
+      "_last_seen": "2026-10-08T23:01:01+08:00"
+    }
+  ]
+}
